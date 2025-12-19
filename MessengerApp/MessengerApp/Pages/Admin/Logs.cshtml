@@ -1,0 +1,166 @@
+﻿@page
+@model MessengerApp.Pages.Admin.LogsModel
+@{
+    ViewData["Title"] = "Message Logs";
+}
+
+<div class="container mt-4">
+    <h2>Message Logs</h2>
+
+    <!-- Фильтры -->
+    <form method="get" class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label asp-for="Filter.StartDate" class="form-label"></label>
+                    <input asp-for="Filter.StartDate" class="form-control" type="date" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Filter.EndDate" class="form-label"></label>
+                    <input asp-for="Filter.EndDate" class="form-control" type="date" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Filter.IpAddress" class="form-label"></label>
+                    <input asp-for="Filter.IpAddress" class="form-control" placeholder="Enter IP address" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input asp-for="Filter.GroupByIp" class="form-check-input" />
+                        <label asp-for="Filter.GroupByIp" class="form-check-label"></label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input asp-for="Filter.GroupByDate" class="form-check-input" />
+                        <label asp-for="Filter.GroupByDate" class="form-check-label"></label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select asp-for="Filter.SortBy" class="form-select">
+                        <option value="Date">Date</option>
+                        <option value="IP">IP Address</option>
+                        <option value="Sender">Sender</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select asp-for="Filter.SortOrder" class="form-select">
+                        <option value="Asc">Ascending</option>
+                        <option value="Desc">Descending</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Результаты -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Messages</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.GroupedMessagesByIp != null)
+            {
+                <h6>Grouped by IP Address</h6>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Message Count</th>
+                            <th>First Message</th>
+                            <th>Last Message</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in Model.GroupedMessagesByIp)
+                        {
+                            <tr>
+                                <td>@group.IPAddress</td>
+                                <td>@group.MessageCount</td>
+                                <td>@group.FirstMessage.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@group.LastMessage.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    <a href="?ipAddress=@group.IPAddress" class="btn btn-sm btn-info">View Messages</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else if (Model.GroupedMessagesByDate != null)
+            {
+                <h6>Grouped by Date</h6>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Message Count</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in Model.GroupedMessagesByDate)
+                        {
+                            <tr>
+                                <td>@group.Date.ToString("yyyy-MM-dd")</td>
+                                <td>@group.MessageCount</td>
+                                <td>
+                                    <a href="?startDate=@group.Date.ToString("yyyy-MM-dd")&endDate=@group.Date.AddDays(1).ToString("yyyy-MM-dd")"
+                                       class="btn btn-sm btn-info">View Messages</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Sender</th>
+                            <th>Receiver</th>
+                            <th>Message</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var message in Model.Messages)
+                        {
+                            <tr>
+                                <td>@message.SentAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@message.SenderName</td>
+                                <td>@message.ReceiverName</td>
+                                <td>@message.ContentPreview</td>
+                                <td>@message.SenderIP</td>
+                                <td>
+                                    @if (message.IsRead)
+                                    {
+                                        <span class="badge bg-success">Read</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">Unread</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <!-- Экспорт в JSON -->
+    <div class="mt-3">
+        <a href="@Model.ApiUrl" class="btn btn-success" target="_blank">Export as JSON</a>
+    </div>
+</div>

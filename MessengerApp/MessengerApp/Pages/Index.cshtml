@@ -1,0 +1,222 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Messenger";
+}
+
+<div class="container-fluid mt-3">
+    <div class="row">
+        <!-- Список контактов -->
+        <div class="col-md-3 border-end">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Contacts</h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/Admin/Logs">View Logs</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/Account/Logout">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Поиск -->
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" placeholder="Search contacts..."
+                       id="searchContacts">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+
+            <!-- Список пользователей -->
+            <div class="list-group" id="contactsList">
+                @if (Model.Users != null && Model.Users.Any())
+                {
+                    @foreach (var user in Model.Users)
+                    {
+                        <a href="#" class="list-group-item list-group-item-action contact-item"
+                           data-userid="@user.Id">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">@user.FirstName @user.LastName</h6>
+                                <small class="text-muted">@user.LastActive</small>
+                            </div>
+                            <p class="mb-1 text-muted">@user.Email</p>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        No contacts found. Other users need to register first.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Область чата -->
+        <div class="col-md-9">
+            <div class="chat-container">
+                <!-- Заголовок чата -->
+                <div class="chat-header border-bottom p-3">
+                    <h4 id="currentChatUser">Select a contact to start chatting</h4>
+                </div>
+
+                <!-- Сообщения -->
+                <div class="chat-messages p-3" id="chatMessages" style="height: 400px; overflow-y: auto;">
+                    <div class="text-center text-muted mt-5">
+                        Select a contact from the list to view messages
+                    </div>
+                </div>
+
+                <!-- Форма отправки сообщения -->
+                <div class="chat-input border-top p-3">
+                    <form id="messageForm">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="messageInput"
+                                   placeholder="Type your message..." required
+                                   disabled>
+                            <input type="hidden" id="receiverId">
+                            <button class="btn btn-primary" type="submit" disabled>Send</button>
+                        </div>
+                        <div class="form-text">
+                            Select a contact to enable messaging
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentUserId = '@Model.CurrentUserId';
+        let currentReceiverId = '';
+
+        // Включаем поле ввода при выборе контакта
+        function enableMessageInput() {
+            document.getElementById('messageInput').disabled = false;
+            document.querySelector('#messageForm button').disabled = false;
+        }
+
+        // Загрузка сообщений при выборе контакта
+        document.querySelectorAll('.contact-item').forEach(item => {
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+                currentReceiverId = this.dataset.userid;
+                document.getElementById('receiverId').value = currentReceiverId;
+
+                // Обновление заголовка
+                const userName = this.querySelector('h6').textContent;
+                document.getElementById('currentChatUser').textContent = userName;
+
+                // Включаем поле ввода
+                enableMessageInput();
+
+                // Загрузка сообщений
+                loadMessages(currentReceiverId);
+
+                // Помечаем активный контакт
+                document.querySelectorAll('.contact-item').forEach(i =>
+                    i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Загрузка сообщений
+        async function loadMessages(receiverId) {
+            try {
+                const response = await fetch(`/api/MessagesApi?receiverId=${receiverId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load messages');
+                }
+
+                const messages = await response.json();
+                const container = document.getElementById('chatMessages');
+                container.innerHTML = '';
+
+                if (messages && messages.length > 0) {
+                    messages.forEach(msg => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = `message mb-2 ${msg.senderId === currentUserId ? 'text-end' : 'text-start'}`;
+
+                        const bubble = document.createElement('div');
+                        bubble.className = `d-inline-block p-3 rounded ${msg.senderId === currentUserId ? 'bg-primary text-white' : 'bg-light'}`;
+                        bubble.style.maxWidth = '70%';
+
+                        bubble.innerHTML = `
+                                    <div>${msg.content || ''}</div>
+                                    <small class="d-block mt-1 ${msg.senderId === currentUserId ? 'text-white-50' : 'text-muted'}">
+                                        ${new Date(msg.sentAt).toLocaleTimeString()}
+                                    </small>
+                                `;
+
+                        messageDiv.appendChild(bubble);
+                        container.appendChild(messageDiv);
+                    });
+                } else {
+                    container.innerHTML = '<div class="text-center text-muted mt-5">No messages yet. Start the conversation!</div>';
+                }
+
+                // Прокрутка вниз
+                container.scrollTop = container.scrollHeight;
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('chatMessages').innerHTML =
+                    '<div class="alert alert-danger">Failed to load messages</div>';
+            }
+        }
+
+        // Отправка сообщения
+        document.getElementById('messageForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const content = document.getElementById('messageInput').value;
+            const receiverId = document.getElementById('receiverId').value;
+
+            if (!content.trim() || !receiverId) {
+                alert('Please enter a message');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/MessagesApi', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        receiverId: receiverId,
+                        content: content
+                    })
+                });
+
+                if (response.ok) {
+                    document.getElementById('messageInput').value = '';
+                    loadMessages(receiverId);
+                } else {
+                    alert('Failed to send message');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Error sending message');
+            }
+        });
+
+        // Поиск контактов
+        const searchInput = document.getElementById('searchContacts');
+        if (searchInput) {
+            searchInput.addEventListener('input', function (e) {
+                const searchTerm = e.target.value.toLowerCase();
+                document.querySelectorAll('.contact-item').forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    item.style.display = text.includes(searchTerm) ? 'block' : 'none';
+                });
+            });
+        }
+    </script>
+}

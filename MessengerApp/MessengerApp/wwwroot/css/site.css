@@ -1,0 +1,88 @@
+:root {
+    /*Deep Blue Sea*/
+    --first-color: #003B7E;
+    --second-color: #002F71;
+    --third-color: #0b2545;
+    --fourth-color: #8da9c4;
+    --fifth-color: #eef4ed;
+    --sixth-color: #4361ee;
+    --seventh-color: #3a0ca3;
+}
+
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+  background-color: var(--second-color);
+}
+
+header{
+    background-color: var(--fourth-color);
+}
+
+.btn-primary {
+    color: var(--fifth-color);
+    background-color: var(--first-color);
+    border-color: transparent;
+}
+
+.btn-primary:hover {
+    color: var(--fifth-color);
+    background-color: var(--sixth-color);
+    border-color: transparent;
+}
+
+.bg-white {
+    background-color: var(--fourth-color) !important;
+}
+
+.border-bottom{
+    border-bottom: var(--fifth-color);
+}
+
+.navbar-light, .navbar-brand {
+    color: var(--first-color) !important;
+}
+
+.btn-outline-secondary{
+    color: var(--fourth-color);
+    border-color: var(--fourth-color)
+}
+
+h4, h5, h2, .text-muted, .form-text, .mt-3, .form-label, .form-check-label {
+    color: var(--fifth-color) !important;
+}
+
+.list-group-item, .form-control {
+    background-color: var(--fourth-color) !important;
+}
+
+h6{
+    color: var(--first-color);
+}
+
+.d-inline-block {
+    color: var(--first-color) !important;
+    background-color: var(--fourth-color) !important;
+}
+
+d-block {
+    color: var(--fourth-color) !important;
+}
